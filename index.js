@@ -1,32 +1,71 @@
-const express = require("express");
-const cors = require("cors");
+import express from "express";
+import fetch from "node-fetch";
+import cors from "cors";
 
 const app = express();
-const PORT = process.env.PORT || 3001;
-const MANGADEX_BASE = "https://api.mangadex.org";
+const PORT = process.env.PORT || 10000;
 
 app.use(cors());
 
-// Proxy all requests to MangaDex
-app.get("/mangadex/*", async (req, res) => {
-  try {
-    const path = req.params[0];
-    const query = req.url.includes("?") ? req.url.split("?")[1] : "";
-    const url = `${MANGADEX_BASE}/${path}${query ? "?" + query : ""}`;
+// ✅ Test route (optional)
+app.get("/", (req, res) => {
+  res.send("MangaDex Proxy Running ✅");
+});
 
-    const response = await fetch(url, {
-      headers: { "User-Agent": "MangaReaderApp/1.0" },
-    });
+// ✅ MangaDex At-Home Server (IMPORTANT FIX)
+app.get("/mangadex/at-home/server/:chapterId", async (req, res) => {
+  try {
+    const { chapterId } = req.params;
+
+    const response = await fetch(
+      `https://api.mangadex.org/at-home/server/${chapterId}`
+    );
 
     const data = await response.json();
-    res.status(response.status).json(data);
-  } catch (err) {
-    console.error("Proxy error:", err.message);
-    res.status(500).json({ error: "Proxy request failed" });
+
+    // 🔥 DO NOT MODIFY — send full response
+    res.json(data);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch chapter data" });
   }
 });
 
-// Health check
-app.get("/", (req, res) => res.json({ status: "ok" }));
+// ✅ (Optional) Manga details route
+app.get("/mangadex/manga/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
 
-app.listen(PORT, () => console.log(`Proxy running on port ${PORT}`));
+    const response = await fetch(
+      `https://api.mangadex.org/manga/${id}`
+    );
+
+    const data = await response.json();
+    res.json(data);
+
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch manga" });
+  }
+});
+
+// ✅ (Optional) Chapters list
+app.get("/mangadex/chapter", async (req, res) => {
+  try {
+    const query = new URLSearchParams(req.query).toString();
+
+    const response = await fetch(
+      `https://api.mangadex.org/chapter?${query}`
+    );
+
+    const data = await response.json();
+    res.json(data);
+
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch chapters" });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
