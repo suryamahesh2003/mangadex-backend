@@ -82,3 +82,16 @@ app.use("/mangadex/*", async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+app.use("/mangadex/*", async (req, res) => {
+  try {
+    const url = "https://api.mangadex.org" + req.originalUrl.replace("/mangadex", "");
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    res.json(data);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Proxy error" });
+  }
+});
