@@ -6,12 +6,7 @@ const PORT = process.env.PORT || 10000;
 
 app.use(cors());
 
-// ✅ Test route
-app.get("/", (req, res) => {
-  res.send("MangaDex Proxy Running ✅");
-});
-
-// ✅ At-home server
+// ✅ At-home server (for images)
 app.get("/mangadex/at-home/server/:chapterId", async (req, res) => {
   try {
     const { chapterId } = req.params;
@@ -24,45 +19,12 @@ app.get("/mangadex/at-home/server/:chapterId", async (req, res) => {
     res.json(data);
 
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: "Failed to fetch chapter data" });
   }
 });
 
-// ✅ Manga details
-app.get("/mangadex/manga/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const response = await fetch(
-      `https://api.mangadex.org/manga/${id}`
-    );
-
-    const data = await response.json();
-    res.json(data);
-
-  } catch (error) {
-    res.status(500).json({ error: "Failed to fetch manga" });
-  }
-});
-
-// ✅ Chapters list
-app.get("/mangadex/chapter", async (req, res) => {
-  try {
-    const query = new URLSearchParams(req.query).toString();
-
-    const response = await fetch(
-      `https://api.mangadex.org/chapter?${query}`
-    );
-
-    const data = await response.json();
-    res.json(data);
-
-  } catch (error) {
-    res.status(500).json({ error: "Failed to fetch chapters" });
-  }
-});
-
-// 🔥 UNIVERSAL PROXY (VERY IMPORTANT)
+// 🔥 UNIVERSAL PROXY (handles EVERYTHING else)
 app.use("/mangadex/*", async (req, res) => {
   try {
     const url =
@@ -74,24 +36,17 @@ app.use("/mangadex/*", async (req, res) => {
 
     res.json(data);
   } catch (error) {
-    res.status(500).json({ error: "Proxy error" });
-  }
-});
-
-// ✅ ONLY ONE LISTEN (LAST LINE)
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
-app.use("/mangadex/*", async (req, res) => {
-  try {
-    const url = "https://api.mangadex.org" + req.originalUrl.replace("/mangadex", "");
-
-    const response = await fetch(url);
-    const data = await response.json();
-
-    res.json(data);
-  } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Proxy error" });
   }
+});
+
+// ✅ Root test route
+app.get("/", (req, res) => {
+  res.send("MangaDex Proxy Running ✅");
+});
+
+// ✅ START SERVER (ONLY ONCE, ALWAYS LAST)
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
