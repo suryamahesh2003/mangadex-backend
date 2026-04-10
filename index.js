@@ -6,12 +6,12 @@ const PORT = process.env.PORT || 10000;
 
 app.use(cors());
 
-// ✅ Test route (optional)
+// ✅ Test route
 app.get("/", (req, res) => {
   res.send("MangaDex Proxy Running ✅");
 });
 
-// ✅ MangaDex At-Home Server (IMPORTANT FIX)
+// ✅ At-home server
 app.get("/mangadex/at-home/server/:chapterId", async (req, res) => {
   try {
     const { chapterId } = req.params;
@@ -21,17 +21,14 @@ app.get("/mangadex/at-home/server/:chapterId", async (req, res) => {
     );
 
     const data = await response.json();
-
-    // 🔥 DO NOT MODIFY — send full response
     res.json(data);
 
   } catch (error) {
-    console.error(error);
     res.status(500).json({ error: "Failed to fetch chapter data" });
   }
 });
 
-// ✅ (Optional) Manga details route
+// ✅ Manga details
 app.get("/mangadex/manga/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -48,7 +45,7 @@ app.get("/mangadex/manga/:id", async (req, res) => {
   }
 });
 
-// ✅ (Optional) Chapters list
+// ✅ Chapters list
 app.get("/mangadex/chapter", async (req, res) => {
   try {
     const query = new URLSearchParams(req.query).toString();
@@ -65,6 +62,23 @@ app.get("/mangadex/chapter", async (req, res) => {
   }
 });
 
+// 🔥 UNIVERSAL PROXY (VERY IMPORTANT)
+app.use("/mangadex/*", async (req, res) => {
+  try {
+    const url =
+      "https://api.mangadex.org" +
+      req.originalUrl.replace("/mangadex", "");
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: "Proxy error" });
+  }
+});
+
+// ✅ ONLY ONE LISTEN (LAST LINE)
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
